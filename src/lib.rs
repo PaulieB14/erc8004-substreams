@@ -5,9 +5,7 @@ use abi::reputation_registry::events as reputation_events;
 use hex;
 use substreams::errors::Error;
 use substreams::prelude::*;
-use substreams::store::{
-    StoreAddInt64, StoreGet, StoreGetString, StoreNew, StoreSet, StoreSetString,
-};
+use substreams::store::{StoreAddInt64, StoreNew, StoreSet, StoreSetString};
 use substreams_database_change::pb::sf::substreams::sink::database::v1::DatabaseChanges;
 use substreams_database_change::tables::Tables;
 use substreams_ethereum::pb::eth::v2::Block;
@@ -56,26 +54,6 @@ fn format_address(addr: &[u8]) -> String {
     format!("0x{}", hex::encode(addr))
 }
 
-fn format_token_id(bytes: &[u8]) -> String {
-    if bytes.is_empty() {
-        return "0".to_string();
-    }
-    let bi = num_bigint::BigUint::from_bytes_be(bytes);
-    bi.to_string()
-}
-
-fn format_int128(bytes: &[u8]) -> String {
-    if bytes.len() < 16 {
-        return "0".to_string();
-    }
-    // int128 is stored as 32 bytes (sign-extended), take last 16 bytes
-    let start = if bytes.len() > 16 { bytes.len() - 16 } else { 0 };
-    let slice = &bytes[start..];
-    let mut arr = [0u8; 16];
-    arr.copy_from_slice(slice);
-    let val = i128::from_be_bytes(arr);
-    val.to_string()
-}
 
 // ─────────────────────────────────────────────────────────
 // map_events — Extract all ERC-8004 events
@@ -163,9 +141,9 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     events.feedbacks.push(pb::NewFeedback {
                         agent_id: evt.agent_id.to_string(),
                         client_address: format_address(&evt.client_address),
-                        feedback_index: evt.feedback_index,
+                        feedback_index: evt.feedback_index.to_u64(),
                         value: evt.value.to_string(),
-                        value_decimals: evt.value_decimals as u32,
+                        value_decimals: evt.value_decimals.to_u64() as u32,
                         tag1: evt.tag1,
                         tag2: evt.tag2,
                         endpoint: evt.endpoint,
@@ -183,7 +161,7 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     events.feedback_revocations.push(pb::FeedbackRevoked {
                         agent_id: evt.agent_id.to_string(),
                         client_address: format_address(&evt.client_address),
-                        feedback_index: evt.feedback_index,
+                        feedback_index: evt.feedback_index.to_u64(),
                         tx_hash: tx_hash.clone(),
                         block_number,
                         log_index,
@@ -197,7 +175,7 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     events.responses.push(pb::ResponseAppended {
                         agent_id: evt.agent_id.to_string(),
                         client_address: format_address(&evt.client_address),
-                        feedback_index: evt.feedback_index,
+                        feedback_index: evt.feedback_index.to_u64(),
                         responder: format_address(&evt.responder),
                         response_uri: evt.response_uri,
                         response_hash: format!("0x{}", hex::encode(&evt.response_hash)),
@@ -335,9 +313,9 @@ pub fn store_reputation(events: Events, store: StoreSetString) {
 #[substreams::handlers::map]
 pub fn db_out(
     events: Events,
-    agents_deltas: Deltas<DeltaString>,
-    feedback_count_deltas: Deltas<DeltaInt64>,
-    reputation_deltas: Deltas<DeltaString>,
+    _agents_deltas: Deltas<DeltaString>,
+    _feedback_count_deltas: Deltas<DeltaInt64>,
+    _reputation_deltas: Deltas<DeltaString>,
 ) -> Result<DatabaseChanges, Error> {
     let mut tables = Tables::new();
 
