@@ -2,7 +2,7 @@ specVersion: v0.1.0
 
 package:
   name: erc8004-substreams
-  version: v0.1.0
+  version: v0.2.0
   description: "ERC-8004 Trustless Agents indexer — Identity & Reputation on Base"
   url: https://github.com/erc-8004/erc-8004-contracts
   image: ./erc8004.jpeg
@@ -30,6 +30,7 @@ network: base
 
 params:
   map_events: "identity_registry=0x8004A169FB4a3325136EB29fA0ceB6D2e539a432,reputation_registry=0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
+  map_flash_events: "identity_registry=0x8004A169FB4a3325136EB29fA0ceB6D2e539a432,reputation_registry=0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
 
 modules:
   # ─── Map: Extract all ERC-8004 events ───────────────────
@@ -80,6 +81,21 @@ modules:
       Maintains running reputation score aggregates per agent.
       Key: rep:{agentId} → sum_value|count|avg
       Also per-tag: rep:{agentId}:{tag1} → sum_value|count|avg
+
+  # ─── Flashblocks: 200ms streaming (no stores) ───────────
+  - name: map_flash_events
+    kind: map
+    initialBlock: 25000000
+    inputs:
+      - params: string
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:erc8004.v1.Events
+    doc: |
+      Flashblocks-compatible module for 200ms streaming on Base.
+      Only processes transactionTraces — no block-level aggregation.
+      Safe for partial blocks. Use with --partial-blocks flag:
+        substreams run -e https://base-mainnet.streamingfast.io map_flash_events -s -1 --partial-blocks
 
   # ─── DB Out: PostgreSQL / ClickHouse sink ───────────────
   - name: db_out

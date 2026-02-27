@@ -19,6 +19,7 @@ High-performance Substreams indexer for [ERC-8004 Trustless Agents](https://eips
 | `store_agents` | store | Tracks agent owner, URI, and wallet state |
 | `store_feedback_counts` | store | Aggregate feedback/response counts per agent |
 | `store_reputation` | store | Running reputation scores per agent and tag |
+| `map_flash_events` | map | Flashblocks streaming at 200ms latency (partial blocks safe) |
 | `db_out` | map | Produces DatabaseChanges for PostgreSQL/ClickHouse |
 
 ## Quick Start
@@ -43,16 +44,16 @@ substreams gui -s 25000000 -t +1000 map_events
 
 ```bash
 docker compose up -d postgres
-substreams-sink-sql setup "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.1.0.spkg
-substreams-sink-sql run "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.1.0.spkg
+substreams-sink-sql setup "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.2.0.spkg
+substreams-sink-sql run "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.2.0.spkg
 ```
 
 ### ClickHouse
 
 ```bash
 docker compose up -d clickhouse
-substreams-sink-sql setup "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.1.0.spkg
-substreams-sink-sql run "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.1.0.spkg
+substreams-sink-sql setup "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.2.0.spkg
+substreams-sink-sql run "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.2.0.spkg
 ```
 
 The ClickHouse schema includes 6 materialized views for real-time analytics:
@@ -83,6 +84,23 @@ make docker-up          # Start Postgres + ClickHouse + Grafana
 make all-postgres       # Full setup: build + setup + run PostgreSQL sink
 make all-clickhouse     # Full setup: build + setup + run ClickHouse sink
 ```
+
+## Flashblocks (200ms Streaming)
+
+Stream ERC-8004 events with 200ms latency using Base Flashblocks:
+
+```bash
+# Stream live with partial blocks
+substreams run -e https://base-mainnet.streamingfast.io map_flash_events -s -1 --partial-blocks
+
+# Visual debugger with Flashblocks
+substreams gui -e https://base-mainnet.streamingfast.io map_flash_events -s -1 --partial-blocks
+
+# Webhook sink for real-time notifications
+substreams sink webhook --partial-blocks -e https://base-mainnet.streamingfast.io http://your-webhook.com ./erc8004-substreams-v0.2.0.spkg -s -1
+```
+
+The `map_flash_events` module only processes `transactionTraces` — no block-level aggregation — so it's safe for partial blocks. You get each ERC-8004 event as soon as it's sequenced by the Base sequencer, rather than waiting for full block confirmation.
 
 ## Links
 

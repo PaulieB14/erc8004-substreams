@@ -1,7 +1,8 @@
-.PHONY: build protogen run gui setup-postgres setup-clickhouse run-postgres run-clickhouse docker-up docker-down clean
+.PHONY: build protogen run gui flash flash-gui setup-postgres setup-clickhouse run-postgres run-clickhouse docker-up docker-down clean
 
 # ─── Configuration ────────────────────────────────────────
-SPKG           := erc8004-substreams-v0.1.0.spkg
+SPKG           := erc8004-substreams-v0.2.0.spkg
+BASE_ENDPOINT  := https://base-mainnet.streamingfast.io
 POSTGRES_DSN   := psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable
 CLICKHOUSE_DSN := clickhouse://default:@localhost:9000/default
 START_BLOCK    := 25000000
@@ -29,6 +30,14 @@ gui:
 
 graph:
 	substreams graph
+
+# ─── Flashblocks (200ms streaming) ───────────────────────
+
+flash:
+	substreams run -e $(BASE_ENDPOINT) map_flash_events -s -1 --partial-blocks
+
+flash-gui:
+	substreams gui -e $(BASE_ENDPOINT) map_flash_events -s -1 --partial-blocks
 
 # ─── Docker Infrastructure ───────────────────────────────
 

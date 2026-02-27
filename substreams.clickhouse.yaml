@@ -2,7 +2,7 @@ specVersion: v0.1.0
 
 package:
   name: erc8004-substreams
-  version: v0.1.0
+  version: v0.2.0
   description: "ERC-8004 Trustless Agents indexer — Identity & Reputation on Base (ClickHouse)"
   url: https://github.com/erc-8004/erc-8004-contracts
   image: ./erc8004.jpeg

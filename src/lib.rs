@@ -56,12 +56,11 @@ fn format_address(addr: &[u8]) -> String {
 
 
 // ─────────────────────────────────────────────────────────
-// map_events — Extract all ERC-8004 events
+// Core event extraction (shared by map_events + map_flash_events)
 // ─────────────────────────────────────────────────────────
 
-#[substreams::handlers::map]
-pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
-    let (identity_addr, reputation_addr) = parse_params(&params);
+fn extract_events(params: &str, block: &Block) -> Result<Events, Error> {
+    let (identity_addr, reputation_addr) = parse_params(params);
     let timestamp = block
         .header
         .as_ref()
@@ -79,7 +78,6 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
 
             // ─── IdentityRegistry events ─────────────────
             if log.address == identity_addr {
-                // Registered(uint256 agentId, string agentURI, address owner)
                 if let Some(evt) = identity_events::Registered::match_and_decode(log) {
                     events.registrations.push(AgentRegistered {
                         agent_id: evt.agent_id.to_string(),
@@ -92,7 +90,6 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     });
                 }
 
-                // Transfer(address from, address to, uint256 tokenId)
                 if let Some(evt) = identity_events::Transfer::match_and_decode(log) {
                     events.transfers.push(AgentTransfer {
                         agent_id: evt.token_id.to_string(),
@@ -105,7 +102,6 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     });
                 }
 
-                // MetadataSet(uint256 agentId, string indexedMetadataKey, string metadataKey, bytes metadataValue)
                 if let Some(evt) = identity_events::MetadataSet::match_and_decode(log) {
                     events.metadata_sets.push(pb::MetadataSet {
                         agent_id: evt.agent_id.to_string(),
@@ -118,7 +114,6 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     });
                 }
 
-                // URIUpdated(uint256 agentId, string newURI, address updatedBy)
                 if let Some(evt) = identity_events::UriUpdated::match_and_decode(log) {
                     events.uri_updates.push(UriUpdated {
                         agent_id: evt.agent_id.to_string(),
@@ -134,9 +129,6 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
 
             // ─── ReputationRegistry events ───────────────
             if log.address == reputation_addr {
-                // NewFeedback(uint256 agentId, address clientAddress, uint64 feedbackIndex,
-                //   int128 value, uint8 valueDecimals, string indexedTag1,
-                //   string tag1, string tag2, string endpoint, string feedbackURI, bytes32 feedbackHash)
                 if let Some(evt) = reputation_events::NewFeedback::match_and_decode(log) {
                     events.feedbacks.push(pb::NewFeedback {
                         agent_id: evt.agent_id.to_string(),
@@ -156,7 +148,6 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     });
                 }
 
-                // FeedbackRevoked(uint256 agentId, address clientAddress, uint64 feedbackIndex)
                 if let Some(evt) = reputation_events::FeedbackRevoked::match_and_decode(log) {
                     events.feedback_revocations.push(pb::FeedbackRevoked {
                         agent_id: evt.agent_id.to_string(),
@@ -169,8 +160,6 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
                     });
                 }
 
-                // ResponseAppended(uint256 agentId, address clientAddress, uint64 feedbackIndex,
-                //   address responder, string responseURI, bytes32 responseHash)
                 if let Some(evt) = reputation_events::ResponseAppended::match_and_decode(log) {
                     events.responses.push(pb::ResponseAppended {
                         agent_id: evt.agent_id.to_string(),
@@ -190,6 +179,15 @@ pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
     }
 
     Ok(events)
+}
+
+// ─────────────────────────────────────────────────────────
+// map_events — Extract all ERC-8004 events
+// ─────────────────────────────────────────────────────────
+
+#[substreams::handlers::map]
+pub fn map_events(params: String, block: Block) -> Result<Events, Error> {
+    extract_events(&params, &block)
 }
 
 // ─────────────────────────────────────────────────────────
@@ -550,4 +548,16 @@ pub fn db_out(
     }
 
     Ok(tables.to_database_changes())
+}
+
+// ─────────────────────────────────────────────────────────
+// map_flash_events — Flashblocks-compatible streaming module
+// ─────────────────────────────────────────────────────────
+// This module is safe for partial blocks (Flashblocks on Base).
+// It only processes transactionTraces — no block-level aggregation,
+// no stores, no block hash usage. Events stream at 200ms latency.
+
+#[substreams::handlers::map]
+pub fn map_flash_events(params: String, block: Block) -> Result<Events, Error> {
+    extract_events(&params, &block)
 }
