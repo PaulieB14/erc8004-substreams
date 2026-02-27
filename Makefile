@@ -1,7 +1,7 @@
 .PHONY: build protogen run gui flash flash-gui setup-postgres setup-clickhouse run-postgres run-clickhouse docker-up docker-down clean
 
 # ─── Configuration ────────────────────────────────────────
-SPKG           := erc8004-substreams-v0.2.0.spkg
+SPKG           := erc8004-substreams-v0.3.0.spkg
 BASE_ENDPOINT  := https://base-mainnet.streamingfast.io
 POSTGRES_DSN   := psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable
 CLICKHOUSE_DSN := clickhouse://default:@localhost:9000/default

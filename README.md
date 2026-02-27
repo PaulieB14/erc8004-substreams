@@ -44,16 +44,16 @@ substreams gui -s 25000000 -t +1000 map_events
 
 ```bash
 docker compose up -d postgres
-substreams-sink-sql setup "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.2.0.spkg
-substreams-sink-sql run "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.2.0.spkg
+substreams-sink-sql setup "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.3.0.spkg
+substreams-sink-sql run "psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable" ./erc8004-substreams-v0.3.0.spkg
 ```
 
 ### ClickHouse
 
 ```bash
 docker compose up -d clickhouse
-substreams-sink-sql setup "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.2.0.spkg
-substreams-sink-sql run "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.2.0.spkg
+substreams-sink-sql setup "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.3.0.spkg
+substreams-sink-sql run "clickhouse://default:@localhost:9000/default" ./erc8004-substreams-v0.3.0.spkg
 ```
 
 The ClickHouse schema includes 6 materialized views for real-time analytics:
@@ -97,7 +97,7 @@ substreams run -e https://base-mainnet.streamingfast.io map_flash_events -s -1 -
 substreams gui -e https://base-mainnet.streamingfast.io map_flash_events -s -1 --partial-blocks
 
 # Webhook sink for real-time notifications
-substreams sink webhook --partial-blocks -e https://base-mainnet.streamingfast.io http://your-webhook.com ./erc8004-substreams-v0.2.0.spkg -s -1
+substreams sink webhook --partial-blocks -e https://base-mainnet.streamingfast.io http://your-webhook.com ./erc8004-substreams-v0.3.0.spkg -s -1
 ```
 
 The `map_flash_events` module only processes `transactionTraces` — no block-level aggregation — so it's safe for partial blocks. You get each ERC-8004 event as soon as it's sequenced by the Base sequencer, rather than waiting for full block confirmation.
