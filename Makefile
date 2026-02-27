@@ -26,24 +26,24 @@ build:
 # ─── Run & Debug ──────────────────────────────────────────
 
 run:
-	substreams run -s $(START_BLOCK) -t $(STOP_BLOCK) $(MODULE)
+	substreams run ./$(SPKG) $(MODULE) -e $(BASE_ENDPOINT) -s $(START_BLOCK) -t $(STOP_BLOCK)
 
 run-production:
-	substreams run -s $(START_BLOCK) -t $(STOP_BLOCK) $(MODULE) --production-mode
+	substreams run ./$(SPKG) $(MODULE) -e $(BASE_ENDPOINT) -s $(START_BLOCK) -t $(STOP_BLOCK) --production-mode
 
 gui:
-	substreams gui -s $(START_BLOCK) -t $(STOP_BLOCK) $(MODULE)
+	substreams gui ./$(SPKG) $(MODULE) -e $(BASE_ENDPOINT) -s $(START_BLOCK) -t $(STOP_BLOCK)
 
 graph:
-	substreams graph
+	substreams graph ./$(SPKG)
 
 # ─── Flashblocks (200ms streaming) ───────────────────────
 
 flash:
-	substreams run -e $(BASE_ENDPOINT) map_flash_events -s -1 --partial-blocks
+	substreams run ./$(SPKG) map_flash_events -e $(BASE_ENDPOINT) -s -1 --partial-blocks
 
 flash-gui:
-	substreams gui -e $(BASE_ENDPOINT) map_flash_events -s -1 --partial-blocks
+	substreams gui ./$(SPKG) map_flash_events -e $(BASE_ENDPOINT) -s -1 --partial-blocks
 
 # ─── Docker Infrastructure ───────────────────────────────
 
