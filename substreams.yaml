@@ -6,6 +6,7 @@ package:
   description: "ERC-8004 Trustless Agents indexer — Identity & Reputation on Base"
   url: https://github.com/erc-8004/erc-8004-contracts
   image: ./erc8004.jpeg
+  doc: ./README.md
 
 imports:
   database: https://github.com/streamingfast/substreams-sink-database-changes/releases/download/v3.0.0/substreams-sink-database-changes-v3.0.0.spkg
