@@ -5,9 +5,15 @@ SPKG           := erc8004-substreams-v0.3.0.spkg
 BASE_ENDPOINT  := https://base-mainnet.streamingfast.io
 POSTGRES_DSN   := psql://erc8004:erc8004pass@localhost:5432/erc8004?sslmode=disable
 CLICKHOUSE_DSN := clickhouse://default:@localhost:9000/default
-START_BLOCK    := 25000000
+START_BLOCK    := 41663783
 STOP_BLOCK     := +1000
 MODULE         := map_events
+
+# Set SUBSTREAMS_API_TOKEN env var or pass TOKEN= on command line
+# Example: make gui TOKEN=eyJhbG...
+ifdef TOKEN
+export SUBSTREAMS_API_TOKEN := $(TOKEN)
+endif
 
 # ─── Build ────────────────────────────────────────────────
 
