@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package erc8004.v1;
+
+// ─────────────────────────────────────────────────────────
+// Top-level event containers
+// ─────────────────────────────────────────────────────────
+
+message Events {
+  repeated AgentRegistered      registrations      = 1;
+  repeated AgentTransfer        transfers           = 2;
+  repeated MetadataSet          metadata_sets       = 3;
+  repeated URIUpdated           uri_updates         = 4;
+  repeated NewFeedback          feedbacks           = 5;
+  repeated FeedbackRevoked      feedback_revocations = 6;
+  repeated ResponseAppended     responses           = 7;
+}
+
+// ─────────────────────────────────────────────────────────
+// IdentityRegistry Events
+// ─────────────────────────────────────────────────────────
+
+message AgentRegistered {
+  string agent_id       = 1;  // uint256 as decimal string
+  string agent_uri      = 2;
+  string owner          = 3;  // address hex
+  string tx_hash        = 4;
+  uint64 block_number   = 5;
+  uint64 log_index      = 6;
+  uint64 timestamp      = 7;
+}
+
+message AgentTransfer {
+  string agent_id       = 1;
+  string from           = 2;  // address hex
+  string to             = 3;  // address hex
+  string tx_hash        = 4;
+  uint64 block_number   = 5;
+  uint64 log_index      = 6;
+  uint64 timestamp      = 7;
+}
+
+message MetadataSet {
+  string agent_id       = 1;
+  string metadata_key   = 2;
+  bytes  metadata_value = 3;
+  string tx_hash        = 4;
+  uint64 block_number   = 5;
+  uint64 log_index      = 6;
+  uint64 timestamp      = 7;
+}
+
+message URIUpdated {
+  string agent_id       = 1;
+  string new_uri        = 2;
+  string updated_by     = 3;  // address hex
+  string tx_hash        = 4;
+  uint64 block_number   = 5;
+  uint64 log_index      = 6;
+  uint64 timestamp      = 7;
+}
+
+// ─────────────────────────────────────────────────────────
+// ReputationRegistry Events
+// ─────────────────────────────────────────────────────────
+
+message NewFeedback {
+  string agent_id         = 1;
+  string client_address   = 2;   // address hex
+  uint64 feedback_index   = 3;
+  string value            = 4;   // int128 as decimal string
+  uint32 value_decimals   = 5;
+  string tag1             = 6;
+  string tag2             = 7;
+  string endpoint         = 8;
+  string feedback_uri     = 9;
+  string feedback_hash    = 10;  // bytes32 hex
+  string tx_hash          = 11;
+  uint64 block_number     = 12;
+  uint64 log_index        = 13;
+  uint64 timestamp        = 14;
+}
+
+message FeedbackRevoked {
+  string agent_id         = 1;
+  string client_address   = 2;
+  uint64 feedback_index   = 3;
+  string tx_hash          = 4;
+  uint64 block_number     = 5;
+  uint64 log_index        = 6;
+  uint64 timestamp        = 7;
+}
+
+message ResponseAppended {
+  string agent_id         = 1;
+  string client_address   = 2;
+  uint64 feedback_index   = 3;
+  string responder        = 4;   // address hex
+  string response_uri     = 5;
+  string response_hash    = 6;   // bytes32 hex
+  string tx_hash          = 7;
+  uint64 block_number     = 8;
+  uint64 log_index        = 9;
+  uint64 timestamp        = 10;
+}

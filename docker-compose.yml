@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # ─── PostgreSQL ─────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: erc8004-postgres
+    environment:
+      POSTGRES_DB: erc8004
+      POSTGRES_USER: erc8004
+      POSTGRES_PASSWORD: erc8004pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erc8004"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── ClickHouse ─────────────────────────────────────────
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: erc8004-clickhouse
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"   # HTTP
+      - "9000:9000"   # Native
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Grafana (optional dashboard) ──────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: erc8004-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - postgres
+      - clickhouse
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+  grafana_data:

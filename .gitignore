@@ -1,0 +1,6 @@
+target/
+*.spkg
+src/pb/
+src/abi/identity_registry.rs
+src/abi/reputation_registry.rs
+.DS_Store

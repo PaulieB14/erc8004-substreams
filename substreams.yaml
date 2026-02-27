@@ -1,0 +1,105 @@
+specVersion: v0.1.0
+
+package:
+  name: erc8004-substreams
+  version: 0.1.0
+  description: "ERC-8004 Trustless Agents indexer — Identity & Reputation on Base"
+  url: https://github.com/erc-8004/erc-8004-contracts
+  image: ./erc8004.jpeg
+
+imports:
+  database: https://github.com/streamingfast/substreams-sink-database-changes/releases/download/v3.0.0/substreams-sink-database-changes-v3.0.0.spkg
+  sql: https://github.com/streamingfast/substreams-sink-sql/releases/download/protodefs-v1.0.7/substreams-sink-sql-protodefs-v1.0.7.spkg
+
+protobuf:
+  files:
+    - erc8004.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/erc8004_substreams.wasm
+
+network: base
+
+params:
+  map_events: "identity_registry=0x8004A169FB4a3325136EB29fA0ceB6D2e539a432,reputation_registry=0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
+
+modules:
+  # ─── Map: Extract all ERC-8004 events ───────────────────
+  - name: map_events
+    kind: map
+    initialBlock: 25000000
+    inputs:
+      - params: string
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:erc8004.v1.Events
+    doc: |
+      Extracts all ERC-8004 events from IdentityRegistry and ReputationRegistry
+      contracts on Base. Covers agent registrations, transfers, metadata changes,
+      feedback, revocations, and responses.
+
+  # ─── Store: Agent identity state ────────────────────────
+  - name: store_agents
+    kind: store
+    updatePolicy: set
+    valueType: string
+    inputs:
+      - map: map_events
+    doc: |
+      Tracks current agent state: owner address, URI, and wallet.
+      Key format: agent:{agentId} → owner|uri|wallet
+
+  # ─── Store: Feedback counts per agent ───────────────────
+  - name: store_feedback_counts
+    kind: store
+    updatePolicy: add
+    valueType: int64
+    inputs:
+      - map: map_events
+    doc: |
+      Tracks total feedback count, active (non-revoked) count,
+      and response count per agent.
+      Keys: feedback_total:{agentId}, feedback_active:{agentId}, responses:{agentId}
+
+  # ─── Store: Reputation aggregates ───────────────────────
+  - name: store_reputation
+    kind: store
+    updatePolicy: set
+    valueType: string
+    inputs:
+      - map: map_events
+    doc: |
+      Maintains running reputation score aggregates per agent.
+      Key: rep:{agentId} → sum_value|count|avg
+      Also per-tag: rep:{agentId}:{tag1} → sum_value|count|avg
+
+  # ─── DB Out: PostgreSQL / ClickHouse sink ───────────────
+  - name: db_out
+    kind: map
+    inputs:
+      - map: map_events
+      - store: store_agents
+        mode: deltas
+      - store: store_feedback_counts
+        mode: deltas
+      - store: store_reputation
+        mode: deltas
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+    doc: |
+      Produces DatabaseChanges for all ERC-8004 events and aggregated state.
+      Powers both PostgreSQL and ClickHouse sinks.
+
+sink:
+  module: db_out
+  type: sf.substreams.sink.sql.v1.Service
+  config:
+    schema: ./schema.sql
+    engine: postgres

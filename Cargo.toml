@@ -1,0 +1,27 @@
+[package]
+name = "erc8004_substreams"
+version = "0.1.0"
+edition = "2021"
+description = "Substreams for ERC-8004 Trustless Agents on Base"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+substreams = "0.7"
+substreams-ethereum = "0.11"
+substreams-database-change = "4"
+prost = "0.13"
+prost-types = "0.13"
+hex = "0.4"
+hex-literal = "0.4"
+num-bigint = "0.4"
+ethabi = "18"
+
+[build-dependencies]
+substreams-ethereum = "0.11"
+
+[profile.release]
+lto = true
+opt-level = 's'
+strip = "debuginfo"
